@@ -20,12 +20,10 @@ truncation_length = 4
 truncate_to_repo = true
 
 [python]
-# env name only, no interpreter version
-format = '[${symbol}(\($virtualenv\) )]($style)'
+disabled = true
 
 [pixi]
-# pixi indicator + env name (when not "default"), no version
-format = '[$symbol(\($environment\) )]($style)'
+disabled = true
 
 [git_status]
 # faster in big repos; counts are still shown
