@@ -1,3 +1,4 @@
 # Repo-only files, never deployed into $HOME
 README.md
 install.sh
+docs/
