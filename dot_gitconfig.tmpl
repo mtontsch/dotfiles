@@ -33,12 +33,6 @@
 	algorithm = histogram
 	colorMoved = default
 
-# Plaintext store kept ONLY for huggingface.co git-over-HTTPS
-# (~/.git-credentials must not contain forge tokens — GitHub/GitLab go via SSH).
-# Drop this once HF access moves to SSH keys as well.
-[credential]
-	helper = store
-
 [filter "lfs"]
 	smudge = git-lfs smudge -- %f
 	process = git-lfs filter-process
