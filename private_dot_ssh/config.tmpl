@@ -6,7 +6,7 @@ Host *
     ServerAliveCountMax 3
     # Multiplexing: reuse one connection, repeated ssh/git/scp become instant
     ControlMaster auto
-    ControlPath ~/.ssh/sockets/%r@%h-%p
+    ControlPath ~/.cache/ssh/%r@%h-%p
     ControlPersist 10m
     AddKeysToAgent yes
 
