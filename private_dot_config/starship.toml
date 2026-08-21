@@ -1,5 +1,14 @@
 # Starship prompt — kept close to defaults, tuned for ssh/tmux/container work.
 
+# Timestamp first, then everything else in default order
+format = "$time$all"
+
+[time]
+disabled = false
+format = "[$time]($style) "
+time_format = "%H:%M:%S"
+style = "dimmed"
+
 # Always show the hostname (you are constantly on remote machines/containers)
 [hostname]
 ssh_only = false
@@ -11,8 +20,12 @@ truncation_length = 4
 truncate_to_repo = true
 
 [python]
-# pixi/venv/conda env name shows via the python module
-format = '[${symbol}${pyenv_prefix}(${version} )(\($virtualenv\) )]($style)'
+# env name only, no interpreter version
+format = '[${symbol}(\($virtualenv\) )]($style)'
+
+[pixi]
+# pixi indicator + env name (when not "default"), no version
+format = '[$symbol(\($environment\) )]($style)'
 
 [git_status]
 # faster in big repos; counts are still shown
