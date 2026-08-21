@@ -23,8 +23,13 @@ truncate_to_repo = true
 disabled = true
 
 [pixi]
-# env name only (when a pixi env is active), no icon/version
-format = '[($environment )]($style)'
+disabled = true
+
+# Show the pixi project name while inside `pixi shell` / `pixi run`
+[env_var.pixi]
+variable = "PIXI_PROJECT_NAME"
+format = "[$env_value]($style) "
+style = "yellow"
 
 [git_status]
 # faster in big repos; counts are still shown
