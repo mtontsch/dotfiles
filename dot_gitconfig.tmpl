@@ -1,0 +1,39 @@
+[user]
+	name = mtontsch
+{{- if eq .role "work" }}
+	email = maximilian.tontsch@unibw.de
+{{- else }}
+	email = maximilian.tontsch@gmx.de
+{{- end }}
+
+# Repos under ~/personal/ always use the private identity, regardless of machine
+[includeIf "gitdir:~/personal/"]
+	path = ~/.config/git/personal.inc
+
+[init]
+	defaultBranch = main
+[pull]
+	rebase = true
+[push]
+	autoSetupRemote = true
+[fetch]
+	prune = true
+[rebase]
+	autostash = true
+[merge]
+	conflictstyle = zdiff3
+[diff]
+	algorithm = histogram
+	colorMoved = default
+
+# TEMPORARY: plaintext token store, kept so HTTPS remotes work until the
+# SSH key is registered on GitHub. Remove this block (and ~/.git-credentials)
+# once remotes are flipped to SSH.
+[credential]
+	helper = store
+
+[filter "lfs"]
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+	clean = git-lfs clean -- %f

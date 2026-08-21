@@ -1,0 +1,14 @@
+model = "gpt-5.6-sol"
+model_verbosity = "low"
+model_reasoning_summary = "auto"
+model_reasoning_effort = "high"
+
+approval_policy = "never"
+sandbox_mode = "workspace-write"
+
+[plugins."github@openai-curated"]
+enabled = true
+
+[projects."/home/mtontsch/autoresearch_tileforge_road_centerline"]
+trust_level = "trusted"
+

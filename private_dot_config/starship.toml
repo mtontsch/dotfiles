@@ -1,0 +1,28 @@
+# Starship prompt — kept close to defaults, tuned for ssh/tmux/container work.
+
+# Always show the hostname (you are constantly on remote machines/containers)
+[hostname]
+ssh_only = false
+format = "[$hostname]($style) "
+style = "bold dimmed green"
+
+[directory]
+truncation_length = 4
+truncate_to_repo = true
+
+[python]
+# pixi/venv/conda env name shows via the python module
+format = '[${symbol}${pyenv_prefix}(${version} )(\($virtualenv\) )]($style)'
+
+[git_status]
+# faster in big repos; counts are still shown
+ahead = "⇡${count}"
+behind = "⇣${count}"
+diverged = "⇕⇡${ahead_count}⇣${behind_count}"
+
+[cmd_duration]
+min_time = 2000
+
+# Trim noise
+[package]
+disabled = true

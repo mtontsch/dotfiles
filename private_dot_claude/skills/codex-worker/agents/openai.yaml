@@ -1,0 +1,4 @@
+interface:
+  display_name: "Codex Worker"
+  short_description: "Delegate scoped work to Codex CLI safely"
+  default_prompt: "Use $codex-worker to delegate this scoped repository task to Codex CLI and verify the result."

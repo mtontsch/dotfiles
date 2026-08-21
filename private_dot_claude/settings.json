@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(/home/mtontsch/autoresearch_tileforge_road_centerline/**)",
+      "Edit(/home/mtontsch/autoresearch_tileforge_road_centerline/**)",
+      "Read(/home/mtontsch/data/BLWeb_tileforged/**)",
+      "Edit(/home/mtontsch/data/BLWeb_tileforged/**)",
+      "Read(/home/mtontsch/tileforge/**)",
+      "Edit(/home/mtontsch/tileforge/**)"
+    ],
+    "ask": [
+      "WebFetch"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Bash(git push *)",
+      "Bash(rm -rf *)"
+    ]
+  },
+  "model": "claude-fable-5[1m]",
+  "effortLevel": "high"
+}

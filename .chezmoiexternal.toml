@@ -1,0 +1,16 @@
+# Zsh plugins, pinned to release tags. Bump versions here deliberately.
+# refreshPeriod only controls how often chezmoi re-checks the URL (cache), not the version.
+
+[".local/share/zsh/plugins/zsh-autosuggestions"]
+    type = "archive"
+    url = "https://github.com/zsh-users/zsh-autosuggestions/archive/refs/tags/v0.7.1.tar.gz"
+    exact = true
+    stripComponents = 1
+    refreshPeriod = "672h"
+
+[".local/share/zsh/plugins/zsh-syntax-highlighting"]
+    type = "archive"
+    url = "https://github.com/zsh-users/zsh-syntax-highlighting/archive/refs/tags/0.8.0.tar.gz"
+    exact = true
+    stripComponents = 1
+    refreshPeriod = "672h"

@@ -1,0 +1,7 @@
+{{/* Asked once per machine on `chezmoi init`; answer stored in ~/.config/chezmoi/chezmoi.toml */}}
+{{- $role := promptStringOnce . "role" "role (work/personal)" -}}
+
+umask = 0o077
+
+[data]
+    role = {{ $role | quote }}

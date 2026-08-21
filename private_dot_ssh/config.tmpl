@@ -1,0 +1,24 @@
+# ~/.ssh/config — managed by chezmoi
+
+Host *
+    # Keep long-lived tmux-over-ssh sessions from dropping
+    ServerAliveInterval 60
+    ServerAliveCountMax 3
+    # Multiplexing: reuse one connection, repeated ssh/git/scp become instant
+    ControlMaster auto
+    ControlPath ~/.ssh/sockets/%r@%h-%p
+    ControlPersist 10m
+    AddKeysToAgent yes
+
+Host github.com
+    User git
+    IdentityFile ~/.ssh/id_ed25519
+
+{{- if ne .chezmoi.hostname "iota" }}
+
+# The GPU work server (adjust HostName to how you reach it: IP, VPN name, ...)
+Host iota
+    HostName iota            # TODO: replace with the actual address if needed
+    User mtontsch
+    ForwardAgent yes
+{{- end }}

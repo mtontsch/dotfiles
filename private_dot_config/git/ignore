@@ -1,0 +1,11 @@
+# Global gitignore — editor/OS junk only; project artifacts belong in each repo's .gitignore
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/.ropeproject
+__pycache__/
+.ipynb_checkpoints/
+**/.claude/settings.local.json
