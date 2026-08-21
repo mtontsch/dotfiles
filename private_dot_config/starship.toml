@@ -23,7 +23,8 @@ truncate_to_repo = true
 disabled = true
 
 [pixi]
-disabled = true
+# env name only (when a pixi env is active), no icon/version
+format = '[($environment )]($style)'
 
 [git_status]
 # faster in big repos; counts are still shown
