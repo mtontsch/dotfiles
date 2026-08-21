@@ -14,6 +14,11 @@ Host github.com
     User git
     IdentityFile ~/.ssh/id_ed25519
 
+# Work GitLab (self-hosted)
+Host git.unibw.de
+    User git
+    IdentityFile ~/.ssh/id_ed25519
+
 {{- if ne .chezmoi.hostname "iota" }}
 
 # The GPU work server (adjust HostName to how you reach it: IP, VPN name, ...)

@@ -3,12 +3,19 @@
 {{- if eq .role "work" }}
 	email = maximilian.tontsch@unibw.de
 {{- else }}
-	email = maximilian.tontsch@gmx.de
+	email = tontsch.ma@proton.me
 {{- end }}
 
-# Repos under ~/personal/ always use the private identity, regardless of machine
-[includeIf "gitdir:~/personal/"]
-	path = ~/.config/git/personal.inc
+# Identity follows the forge, overriding the default above:
+# GitLab (work) -> unibw, GitHub (private) -> proton
+[includeIf "hasconfig:remote.*.url:https://git.unibw.de/**"]
+	path = ~/.config/git/work.inc
+[includeIf "hasconfig:remote.*.url:git@git.unibw.de:*/**"]
+	path = ~/.config/git/work.inc
+[includeIf "hasconfig:remote.*.url:https://github.com/**"]
+	path = ~/.config/git/github.inc
+[includeIf "hasconfig:remote.*.url:git@github.com:*/**"]
+	path = ~/.config/git/github.inc
 
 [init]
 	defaultBranch = main
@@ -26,9 +33,9 @@
 	algorithm = histogram
 	colorMoved = default
 
-# TEMPORARY: plaintext token store, kept so HTTPS remotes work until the
-# SSH key is registered on GitHub. Remove this block (and ~/.git-credentials)
-# once remotes are flipped to SSH.
+# Plaintext store kept ONLY for huggingface.co git-over-HTTPS
+# (~/.git-credentials must not contain forge tokens — GitHub/GitLab go via SSH).
+# Drop this once HF access moves to SSH keys as well.
 [credential]
 	helper = store
 
