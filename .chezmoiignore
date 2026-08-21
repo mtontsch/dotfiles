@@ -2,3 +2,9 @@
 README.md
 install.sh
 docs/
+
+# In devcontainers ~/.ssh is a read-only bind mount from the host: don't manage it
+{{ if stat "/.dockerenv" -}}
+.ssh
+.ssh/**
+{{- end }}

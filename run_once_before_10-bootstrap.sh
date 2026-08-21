@@ -2,7 +2,7 @@
 # Runs once per machine (chezmoi tracks it by content hash). Idempotent, no root.
 set -euo pipefail
 
-mkdir -p "$HOME/.ssh" "$HOME/.cache/ssh" "$HOME/.cache/zsh" "$HOME/.local/bin"
+mkdir -p "$HOME/.ssh" "$HOME/.cache/zsh" "$HOME/.local/bin"
 chmod 700 "$HOME/.ssh" 2>/dev/null || true   # read-only mount in devcontainers
 
 # starship prompt
