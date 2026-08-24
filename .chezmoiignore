@@ -9,10 +9,7 @@ docs/
 .ssh/**
 {{- end }}
 
-# Devcontainer baseline + container-shared shell/bin: consumed via the
-# devcontainer same-path mount and per-project copies, never deployed by chezmoi
+# Devcontainer baseline: consumed via per-project copies, never deployed by
+# chezmoi. (Container shells get the same chezmoi-managed config as hosts —
+# the baseline postCreateCommand.sh bootstraps this repo and applies it.)
 devcontainer-baseline/
-shell/
-bin/
-.gitignore
-.zsh_history.local

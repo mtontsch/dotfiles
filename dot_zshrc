@@ -65,3 +65,8 @@ if [[ -f /opt/conda/etc/profile.d/conda.sh ]]; then
         conda "$@"
     }
 fi
+
+# ---- Machine-local overrides (not managed by chezmoi) -----------------------
+# Per-machine extras: venv activation in devcontainers, secrets, host aliases.
+# Devcontainer postCreate scripts write here instead of editing ~/.zshrc.
+[[ -f "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local"

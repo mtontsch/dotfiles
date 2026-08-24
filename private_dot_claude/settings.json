@@ -18,5 +18,9 @@
     ]
   },
   "model": "claude-fable-5[1m]",
-  "effortLevel": "high"
+  "effortLevel": "high",
+  "advisorModel": "fable",
+  "tui": "fullscreen",
+  "theme": "dark",
+  "switchModelsOnFlag": false
 }

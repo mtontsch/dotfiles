@@ -19,6 +19,18 @@ the working **tileforge @ iota** setup, kept as a runnable example.
   rebuilds don't re-download torch/CUDA.
 - **Persistent container**: `--restart=unless-stopped`, `shutdownAction: none`;
   day-to-day you attach, you don't relaunch.
+- **Chezmoi shell config everywhere**: postCreate bootstraps this dotfiles repo
+  into `~/.local/share/chezmoi` and applies it, so container shells match host
+  shells (starship, plugins, aliases). Container-specific lines (venv
+  activation, `CLAUDE_CONFIG_DIR`) go to `~/.zshrc.local`, sourced by the
+  managed `~/.zshrc`. Rebuilds need github.com/mtontsch/dotfiles reachable.
+- **No `CLAUDE_CODE_OAUTH_TOKEN` in `remoteEnv`**: an env token silently
+  overrides the stored login in the bind-mounted `~/.claude` and goes stale
+  (the "Fable (disabled)" incident, Aug 2026). The mount carries the login.
+- **Day-to-day entry**: `devcon [container] [session]` from the host (deployed
+  to `~/.local/bin` by chezmoi) or the `dev` alias in any container shell —
+  both land in the `dev` tmux session, where `claude` keeps running across
+  detaches and SSH disconnects.
 
 ## Adapting to a new project / server
 

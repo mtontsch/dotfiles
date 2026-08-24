@@ -74,19 +74,36 @@ else
 fi
 
 # Auto-activate the project venv and enable uv completions in every zsh shell
-# (and thus tmux panes). ~/.zshrc is container-local, so these appends restart
-# from scratch on every rebuild; the grep guard makes reruns idempotent.
-ZSHRC="${HOME}/.zshrc"
-add_zshrc_line() {
-	grep -qxF "$1" "${ZSHRC}" 2>/dev/null || echo "$1" >> "${ZSHRC}"
+# (and thus tmux panes). Container-specific lines go to ~/.zshrc.local, which
+# the chezmoi-managed ~/.zshrc sources at the end — so `chezmoi apply` never
+# clobbers them and they never dirty the dotfiles state. ~/.zshrc.local is
+# container-local, so these appends restart from scratch on every rebuild;
+# the grep guard makes reruns idempotent.
+ZSHRC_LOCAL="${HOME}/.zshrc.local"
+add_local_line() {
+	grep -qxF "$1" "${ZSHRC_LOCAL}" 2>/dev/null || echo "$1" >> "${ZSHRC_LOCAL}"
 }
-add_zshrc_line 'export PATH="${HOME}/.local/bin:${PATH}"'
+add_local_line 'export PATH="${HOME}/.local/bin:${PATH}"'
 # Make codex-worker + Claude config work in plain `docker exec` shells too
 # (these normally come from devcontainer.json remoteEnv, which VS Code only
 # injects into its own terminals — a raw docker exec shell wouldn't get them).
-add_zshrc_line 'export PATH="${HOME}/.codex/bin:${PATH}"'
-add_zshrc_line 'export CLAUDE_CONFIG_DIR="${HOME}/.claude"'
+add_local_line 'export PATH="${HOME}/.codex/bin:${PATH}"'
+add_local_line 'export CLAUDE_CONFIG_DIR="${HOME}/.claude"'
 # Guarded so shells stay usable even if the venv is missing/broken.
-add_zshrc_line "[ -f ${WORKSPACE}/.venv/bin/activate ] && source ${WORKSPACE}/.venv/bin/activate"
-add_zshrc_line 'eval "$(uv generate-shell-completion zsh)"'
-add_zshrc_line 'eval "$(uvx --generate-shell-completion zsh)"'
+add_local_line "[ -f ${WORKSPACE}/.venv/bin/activate ] && source ${WORKSPACE}/.venv/bin/activate"
+add_local_line 'eval "$(uv generate-shell-completion zsh)"'
+add_local_line 'eval "$(uvx --generate-shell-completion zsh)"'
+
+# Dotfiles (chezmoi): clone into chezmoi's canonical source path and apply —
+# same shell environment (starship, zsh plugins, aliases, ~/.zshrc.local hook)
+# inside the container as on every host. install.sh installs chezmoi to
+# ~/.local/bin and runs `chezmoi init --apply` with role=work, no TTY needed.
+# Rebuilds therefore need github.com/mtontsch/dotfiles to be reachable; on a
+# pull failure the existing checkout is applied as-is.
+CHEZMOI_SRC="${HOME}/.local/share/chezmoi"
+if [ -d "${CHEZMOI_SRC}/.git" ]; then
+	git -C "${CHEZMOI_SRC}" pull --ff-only || echo ">>> dotfiles pull failed (offline?); applying existing checkout"
+else
+	git clone https://github.com/mtontsch/dotfiles "${CHEZMOI_SRC}"
+fi
+sh "${CHEZMOI_SRC}/install.sh"

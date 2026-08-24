@@ -1,5 +1,5 @@
 {{/* Asked once per machine on `chezmoi init`; answer stored in ~/.config/chezmoi/chezmoi.toml */}}
-{{- $role := promptStringOnce . "role" "role (work/personal)" -}}
+{{- $role := promptStringOnce . "role" "role" -}}
 
 umask = 0o077
 

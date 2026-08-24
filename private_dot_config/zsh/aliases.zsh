@@ -18,6 +18,9 @@ alias gl='git log --oneline --graph --decorate -20'
 
 # tmux: attach to session (or create "main") — the usual post-ssh command
 ta() { tmux attach -t "${1:-main}" 2>/dev/null || tmux new -s "${1:-main}"; }
+# the devcontainer work session (same name `devcon` uses from the host);
+# panes are full login shells — start `claude` in one and detach freely
+alias dev='tmux new-session -A -s dev'
 
 # chezmoi
 alias cz='chezmoi'

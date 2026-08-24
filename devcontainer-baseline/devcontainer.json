@@ -140,14 +140,15 @@
     ],
 
     "remoteEnv": {
-        // [USER-SPECIFIC] git identity — keep name/email in sync with the host
-        // `git config` so container commits blame/attribute identically.
-        "GIT_USER_NAME": "Maximilian Tontsch",
+        // [USER-SPECIFIC] git identity — keep name/email in sync with the
+        // chezmoi-managed ~/.gitconfig so container commits blame/attribute
+        // identically.
+        "GIT_USER_NAME": "mtontsch",
         "GIT_USER_EMAIL": "maximilian.tontsch@unibw.de",
-        // Injected from the host environment at attach time, never baked into
-        // the image. Visible to every process in the container (that is the
-        // point — agents need it) and via `docker inspect` on the host.
-        "CLAUDE_CODE_OAUTH_TOKEN": "${localEnv:CLAUDE_CODE_OAUTH_TOKEN}",
+        // CLAUDE_CODE_OAUTH_TOKEN is deliberately NOT forwarded: an env token
+        // silently overrides the stored login in the bind-mounted ~/.claude
+        // and goes stale — the "Fable (disabled)" incident of Aug 2026. The
+        // mount carries the fresh login; agents need nothing else.
         // [SERVER-SPECIFIC] paths contain the container user's home.
         "CLAUDE_CONFIG_DIR": "/home/mtontsch/.claude",
         "PATH": "/home/mtontsch/.codex/bin:${containerEnv:PATH}"
