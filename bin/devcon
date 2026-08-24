@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# devcon [container] [session] — from the HOST: drop into a tmux session
+# inside the running devcontainer. Attaches if the session exists, creates it
+# otherwise; tmux (and anything running in it, e.g. claude) survives detach
+# (prefix+d) and SSH disconnects.
+set -euo pipefail
+CONTAINER="${1:-mt-tileforge-dev}"
+SESSION="${2:-dev}"
+exec docker exec -it "$CONTAINER" zsh -ic "tmux new-session -A -s '$SESSION'"
