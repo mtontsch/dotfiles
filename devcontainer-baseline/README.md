@@ -70,9 +70,11 @@ value when unset:
 | `TF_SHM_SIZE`       | `--shm-size`                                      | `64g`               | `64g`                 |
 | `TF_WORKSPACES_DIR` | optional same-path mount for `.code-workspace` files; unset → no-op `/dev/null` self-mount | unset | `$HOME/WORKSPACES_IOTA` |
 
-They live in `dot_zshenv.tmpl` in this repo, branched on `.chezmoi.hostname`
-(`~/.zshenv` is read by every zsh, including the non-interactive one VS Code
-uses to resolve the server environment). To add a host: add a branch with its
+They live in `dot_profile.tmpl` in this repo, branched on `.chezmoi.hostname`.
+`~/.profile` is what VS Code's login-shell environment resolution reads on a
+bash-login host (dgx1); `~/.zshenv` sources it so zsh hosts/sessions get the
+same values. (A `~/.zshenv`-only version silently failed on dgx1 — the login
+shell there is bash.) To add a host: add a branch with its
 values, `chezmoi apply`, then rebuild. Verify resolution end-to-end with the
 canary described under failure modes before trusting it — on a host whose
 values equal the defaults, a broken resolution path is invisible.

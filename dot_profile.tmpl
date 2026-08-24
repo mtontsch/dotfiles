@@ -1,0 +1,36 @@
+# ~/.profile — managed by chezmoi. Read by POSIX/bash LOGIN shells (not by
+# bash if ~/.bash_profile exists — don't create one). ~/.zshenv sources it too,
+# so the exports below reach zsh as well. Keep it to plain exports.
+#
+# Why here: VS Code resolves the "local" environment for devcontainer.json's
+# ${localEnv:...} by running the user's LOGIN shell on the host — /bin/bash on
+# dgx1 — so ~/.zshenv alone is never seen there.
+
+# --- Ubuntu default (kept verbatim) -----------------------------------------
+if [ -n "$BASH_VERSION" ]; then
+    if [ -f "$HOME/.bashrc" ]; then
+        . "$HOME/.bashrc"
+    fi
+fi
+if [ -d "$HOME/bin" ] ; then
+    PATH="$HOME/bin:$PATH"
+fi
+if [ -d "$HOME/.local/bin" ] ; then
+    PATH="$HOME/.local/bin:$PATH"
+fi
+
+# --- Per-host values for the devcontainer baseline ---------------------------
+# dotfiles:devcontainer-baseline/devcontainer.json reads these as
+# ${localEnv:TF_*:default}; defaults are the dgx1 values, so dgx1 exports
+# nothing. Inside containers no branch matches — harmless. See the baseline
+# README, "Per-host values".
+{{- if eq .chezmoi.hostname "iota" }}
+export TF_UID=1001
+export TF_GID=1001
+export TF_DATA_GID=100
+export TF_DATA_GID2=100
+export TF_DATA_ROOT=/mnt/data
+export TF_WORKSPACES_DIR="$HOME/WORKSPACES_IOTA"
+{{- else if hasPrefix "dgx1" .chezmoi.hostname }}
+# dgx1: the baseline defaults already match this host — nothing to override.
+{{- end }}
