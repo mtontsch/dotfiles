@@ -8,3 +8,11 @@ docs/
 .ssh
 .ssh/**
 {{- end }}
+
+# Devcontainer baseline + container-shared shell/bin: consumed via the
+# devcontainer same-path mount and per-project copies, never deployed by chezmoi
+devcontainer-baseline/
+shell/
+bin/
+.gitignore
+.zsh_history.local
