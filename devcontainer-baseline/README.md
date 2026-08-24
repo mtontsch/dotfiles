@@ -70,7 +70,9 @@ value when unset:
 | `TF_SHM_SIZE`       | `--shm-size`                                      | `64g`               | `64g`                 |
 | `TF_WORKSPACES_DIR` | optional same-path mount for `.code-workspace` files; unset → no-op `/dev/null` self-mount | unset | `$HOME/WORKSPACES_IOTA` |
 
-They live in `dot_profile.tmpl` in this repo, branched on `.chezmoi.hostname`.
+They live in `dot_profile.tmpl` in this repo, branched on the trimmed output of
+`hostname`. Do not use `.chezmoi.hostname` for this: chezmoi can canonicalize it
+through reverse DNS (on dgx1 it resolves to `localhost6`).
 `~/.profile` is what VS Code's login-shell environment resolution reads on a
 bash-login host (dgx1); `~/.zshenv` sources it so zsh hosts/sessions get the
 same values. (A `~/.zshenv`-only version silently failed on dgx1 — the login

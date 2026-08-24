@@ -7,7 +7,7 @@
 // host — no per-host edits, no merge conflicts between checkouts.
 //
 // ${localEnv:VAR:default} reads VAR from the VS Code server process on the
-// host (Remote-SSH: the SSH host). The chezmoi-managed ~/.zshenv exports the
+// host (Remote-SSH: the SSH host). The chezmoi-managed ~/.profile exports the
 // TF_* set per host; a host where none are set gets the defaults below.
 //
 // Portability: this file is meant to work on any Linux server with an NVIDIA
