@@ -1,0 +1,20 @@
+# ~/.zshenv — managed by chezmoi (edit via `chezmoi edit ~/.zshenv`).
+# Read by EVERY zsh (login, interactive, scripts, `ssh host cmd`), so keep it
+# to plain exports — no output, no interactive setup (that lives in ~/.zshrc).
+#
+# Per-host values for the devcontainer baseline (dotfiles:devcontainer-baseline/
+# devcontainer.json). The baseline reads them as ${localEnv:TF_*:default} from
+# the VS Code server process on the host; the defaults are the dgx1 values, so
+# dgx1 exports nothing. Inside containers the hostname matches no branch and
+# this file is empty — harmless. Add a branch per new host (see the baseline
+# README, "Per-host values").
+{{- if eq .chezmoi.hostname "iota" }}
+export TF_UID=1001
+export TF_GID=1001
+export TF_DATA_GID=100
+export TF_DATA_GID2=100
+export TF_DATA_ROOT=/mnt/data
+export TF_WORKSPACES_DIR="$HOME/WORKSPACES_IOTA"
+{{- else if eq .chezmoi.hostname "dgx1-headnode" }}
+# dgx1: the baseline defaults already match this host — nothing to override.
+{{- end }}
