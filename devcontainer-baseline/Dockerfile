@@ -35,6 +35,20 @@ RUN apt-get update \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
 
+# Make "no sudo" literal: the base image ships sudo setuid, and with
+# --security-opt=no-new-privileges it is merely inert. Purge it and strip the
+# setuid/setgid bits image-wide (su, passwd, mount, ...) so a later config
+# regression (someone dropping no-new-privileges while debugging) cannot turn
+# a dormant escalation path back on. Nothing in an agent dev container needs
+# setuid. (SUDO_FORCE_REMOVE: Ubuntu's sudo prerm refuses removal without it.)
+# The find at the end prints anything still privileged into the build
+# log — expect it to be empty.
+RUN SUDO_FORCE_REMOVE=yes apt-get purge -y sudo \
+    && rm -rf /etc/sudoers /etc/sudoers.d \
+    && find / -xdev -perm /6000 -type f -exec chmod a-s {} + \
+    && echo "remaining setuid/setgid files:" \
+    && find / -xdev -perm /6000 -type f
+
 # Geospatial native stack (GDAL/PROJ/spatialite CLIs + headers, GeographicLib/
 # FFTW/GeoTIFF for rpcm). NOTE on reproducibility: ubuntugis-UNSTABLE tracks
 # fresh GDAL releases whose behavior can shift between rebuilds — and the QGIS
