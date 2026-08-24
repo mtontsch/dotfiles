@@ -1,34 +1,37 @@
 // BASELINE devcontainer template — lives in the dotfiles repo, copied into
-// <project>/.devcontainer/ per project. Values below are the working
-// tileforge/iota example; adapt everything tagged [PROJECT-SPECIFIC] /
-// [SERVER-SPECIFIC] / [USER-SPECIFIC] (see README.md).
+// <project>/.devcontainer/ per project. Adapt everything tagged
+// [PROJECT-SPECIFIC] / [USER-SPECIFIC] by editing this file; everything tagged
+// [SERVER-SPECIFIC] is resolved at container-build time from TF_* environment
+// variables on the host (see README.md, "Per-host values"), with the dgx1
+// values as literal fallbacks. The same committed file therefore serves every
+// host — no per-host edits, no merge conflicts between checkouts.
 //
-// Origin: devcontainer for GPU geospatial processing with unsupervised LLM agents.
+// ${localEnv:VAR:default} reads VAR from the VS Code server process on the
+// host (Remote-SSH: the SSH host). The chezmoi-managed ~/.zshenv exports the
+// TF_* set per host; a host where none are set gets the defaults below.
 //
 // Portability: this file is meant to work on any Linux server with an NVIDIA
-// GPU + NVIDIA Container Toolkit. Everything tied to ONE PARTICULAR host or
-// user is tagged [SERVER-SPECIFIC] / [USER-SPECIFIC] — grep for those tags
-// when adapting the container to a new machine.
+// GPU + NVIDIA Container Toolkit.
 //
 // Security model: the container is the sandbox boundary for agents running
-// inside it (Claude Code, Codex under --yolo). The container user has NO sudo;
-// for one-off root work run `docker exec -u root mt-tileforge-dev bash` from
-// the host. Known remaining gaps: unrestricted network egress, and read-write
-// bind mounts (agents can modify anything under the repo, /mnt/data,
-// ~/.claude, ~/.codex).
+// inside it (Claude Code, Codex under --yolo). The container user has NO sudo
+// (purged from the image; all setuid bits stripped); for one-off root work run
+// `docker exec -u root mt-tileforge-dev bash` from the host. Known remaining
+// gaps: unrestricted network egress, and read-write bind mounts (agents can
+// modify anything under the repo, the data store, ~/.claude, ~/.codex).
 {
     // [PROJECT-SPECIFIC] display name.
     "name": "tileforge-devcontainer",
 
     "build": {
         "dockerfile": "Dockerfile",
-        // [SERVER-SPECIFIC] Match the host user (`id -un` / `id -u` / `id -g`)
-        // so bind-mounted files keep the right owner. This is the single place
-        // to adapt identity; the Dockerfile ARGs only provide fallbacks.
+        // [USER-SPECIFIC] the account name; [SERVER-SPECIFIC] its numeric ids
+        // (`id -u` / `id -g` on the host) so bind-mounted files keep the right
+        // owner. The Dockerfile ARGs only provide fallbacks to these.
         "args": {
             "USERNAME": "mtontsch",
-            "USER_UID": "1001",
-            "USER_GID": "1001"
+            "USER_UID": "${localEnv:TF_UID:1005}",
+            "USER_GID": "${localEnv:TF_GID:1005}"
         }
     },
 
@@ -36,15 +39,15 @@
     // work (terminals, tasks, postCreate, the VS Code server) run as the user
     // created in the Dockerfile. Its UID/GID are baked to match the host user,
     // so no runtime UID remap is needed (updateRemoteUserUID: false).
-    // [SERVER-SPECIFIC] keep both in sync with build.args.USERNAME.
+    // [USER-SPECIFIC] keep both in sync with build.args.USERNAME.
     "containerUser": "mtontsch",
     "remoteUser": "mtontsch",
     "updateRemoteUserUID": false,
 
     // Keep the container alive independently of VS Code (long training runs,
     // detached tmux, agents on a schedule). Caveat: a stale running container
-    // holding the fixed --name below can block a rebuild — stop/rm it manually
-    // if "name already in use" appears.
+    // holding the fixed --name below blocks a rebuild — VS Code's rebuild does
+    // not reliably remove it; `docker rm -f <name>` on the host first.
     "shutdownAction": "none",
 
     // GPU is effectively REQUIRED, not optional: "--gpus all" below aborts
@@ -58,7 +61,7 @@
     "init": true,
 
     "runArgs": [
-        // [SERVER-SPECIFIC] fixed name = one instance per host; rename per
+        // [PROJECT-SPECIFIC] fixed name = one instance per host; rename per
         // user/checkout if several coexist.
         "--name", "mt-tileforge-dev",
         "--restart=unless-stopped",
@@ -69,25 +72,34 @@
         "--gpus", "all",
         // PyTorch DataLoader workers need a large /dev/shm, NOT the host's IPC
         // namespace — so use --shm-size instead of the broader --ipc=host.
-        // [SERVER-SPECIFIC] size to the host's RAM.
-        "--shm-size=16g",
+        // [SERVER-SPECIFIC] size to the host's RAM (64g fits both 128 GB and
+        // 2 TiB hosts; override for smaller boxes).
+        "--shm-size=${localEnv:TF_SHM_SIZE:64g}",
         // Hardening against misbehaving agents: no privilege escalation via
-        // setuid binaries (we removed sudo anyway), and a fork-bomb backstop.
-        // Note: Claude Code's bubblewrap sandbox may be blocked by the default
-        // container seccomp profile regardless — the container itself is the
-        // intended sandbox here.
+        // setuid binaries (none left in the image anyway), and a fork-bomb
+        // backstop. Note: Claude Code's bubblewrap sandbox may be blocked by
+        // the default container seccomp profile regardless — the container
+        // itself is the intended sandbox here.
         "--security-opt=no-new-privileges",
         "--pids-limit=4096",
         // Optional hard caps for shared servers — uncomment and size to host:
-        // [SERVER-SPECIFIC] "--memory=64g", "--cpus=16",
+        // "--memory=${localEnv:TF_MEMORY:512g}", "--cpus=${localEnv:TF_CPUS:32}",
         //
         // [SERVER-SPECIFIC] supplementary groups so the non-root user keeps
-        // access to group-owned data mounts (here: users=100 owns /mnt/data).
-        // Find yours with `id` / `stat -c '%g' <mount>` on the host.
-        "--group-add", "100"
+        // access to group-owned data mounts. Two slots; a host with one data
+        // group sets both TF_DATA_GID and TF_DATA_GID2 to it (duplicates are
+        // harmless). Find yours with `id` / `stat -c '%g' <mount>` on the host.
+        "--group-add", "${localEnv:TF_DATA_GID:1002}",
+        "--group-add", "${localEnv:TF_DATA_GID2:1003}"
     ],
 
     "postCreateCommand": "./.devcontainer/postCreateCommand.sh",
+    // Do not connect VS Code (and open its first terminal) until postCreate has
+    // finished. The default (updateContentCommand) connects earlier, so the
+    // very first terminal after a rebuild is a bare zsh with no ~/.zshrc yet —
+    // chezmoi/starship only land at the end of postCreate. Costs a few minutes
+    // of "Starting Dev Container" on a cold rebuild; cached rebuilds are fast.
+    "waitFor": "postCreateCommand",
 
     "customizations": {
         "vscode": {
@@ -106,36 +118,49 @@
                 "anthropic.claude-code",
                 "openai.chatgpt"
             ],
-            "settings": {}
+            "settings": {
+                // Pin the interpreter to the uv-managed project venv so the
+                // Python extension never picks a stale sibling (.venv.old-*).
+                // Shell activation is handled by ~/.zshrc.local (postCreate),
+                // so the extension's own activation injection is turned off —
+                // it would otherwise re-source whatever venv it last remembered.
+                "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+                "python.terminal.activateEnvironment": false
+            }
         }
     },
 
     // SAME-PATH mount: the repo keeps its host path inside the container
-    // (like /mnt/data and ~/WORKSPACES_IOTA below). One path dialect
-    // everywhere: workspace files, venv shebangs, git worktrees, and Claude
-    // Code project history/memory all stay valid across the host/container
-    // boundary. (The delivery/platform containers keep their own /workspace
-    // convention — that is a separate contract, unaffected by this.)
+    // (like the data store and the optional workspace-file collection below).
+    // One path dialect everywhere: workspace files, venv shebangs, git
+    // worktrees, and Claude Code project history/memory all stay valid across
+    // the host/container boundary. (The delivery/platform containers keep
+    // their own /workspace convention — a separate contract, unaffected.)
     "workspaceMount": "source=${localWorkspaceFolder},target=${localWorkspaceFolder},type=bind,consistency=cached",
     "workspaceFolder": "${localWorkspaceFolder}",
 
     "mounts": [
-        // [SERVER-SPECIFIC] data/artifact store; mounted at the SAME path as on
-        // the host so absolute paths in logs/manifests stay valid everywhere,
-        // and so the workspace file's /mnt/data root resolves on both sides.
-        { "source": "/mnt/data", "target": "/mnt/data", "type": "bind" },
+        // [SERVER-SPECIFIC] data/artifact store, mounted at the SAME path as on
+        // the host so absolute paths in logs/manifests stay valid everywhere.
+        // Mount the narrowest subtree that covers the project's data — it
+        // bounds the agents' blast radius on a shared box.
+        { "source": "${localEnv:TF_DATA_ROOT:/mnt/data/hegemon}", "target": "${localEnv:TF_DATA_ROOT:/mnt/data/hegemon}", "type": "bind" },
         // Agent state/config shared with the host (credentials live in here —
         // part of the reason egress control is worth adding).
-        // [SERVER-SPECIFIC] targets must match the container user's home.
+        // [USER-SPECIFIC] targets must match the container user's home.
         { "source": "${localEnv:HOME}/.claude", "target": "/home/mtontsch/.claude", "type": "bind" },
         { "source": "${localEnv:HOME}/.codex", "target": "/home/mtontsch/.codex", "type": "bind" },
-        // [SERVER-SPECIFIC] workspace-file collection, mounted same-path so the
-        // container-side .code-workspace files (absolute container paths) can
-        // be opened from inside the container, adjacent to the SSH ones.
-        { "source": "${localEnv:HOME}/WORKSPACES_IOTA", "target": "/home/mtontsch/WORKSPACES_IOTA", "type": "bind" },
-        // [PROJECT-SPECIFIC] volume name. Named volume for uv download cache so rebuilds do not
-        // re-download multi-GB torch/CUDA wheels.
-        // [SERVER-SPECIFIC] target must match the container user's home.
+        // [SERVER-SPECIFIC] optional same-path mount for a workspace-file
+        // collection (iota: ~/WORKSPACES_IOTA, so its container-side
+        // .code-workspace files open from inside the container). Hosts without
+        // one leave TF_WORKSPACES_DIR unset: the fallback bind-mounts the
+        // host's /dev/null onto the container's /dev/null — the same character
+        // device, i.e. a no-op — because a mount entry cannot be made
+        // conditional and the source must exist on every host.
+        { "source": "${localEnv:TF_WORKSPACES_DIR:/dev/null}", "target": "${localEnv:TF_WORKSPACES_DIR:/dev/null}", "type": "bind" },
+        // [PROJECT-SPECIFIC] volume name. Named volume for uv download cache so
+        // rebuilds do not re-download multi-GB torch/CUDA wheels.
+        // [USER-SPECIFIC] target must match the container user's home.
         { "source": "tileforge-uv-cache", "target": "/home/mtontsch/.cache/uv", "type": "volume" }
     ],
 
@@ -149,7 +174,7 @@
         // silently overrides the stored login in the bind-mounted ~/.claude
         // and goes stale — the "Fable (disabled)" incident of Aug 2026. The
         // mount carries the fresh login; agents need nothing else.
-        // [SERVER-SPECIFIC] paths contain the container user's home.
+        // [USER-SPECIFIC] paths contain the container user's home.
         "CLAUDE_CONFIG_DIR": "/home/mtontsch/.claude",
         "PATH": "/home/mtontsch/.codex/bin:${containerEnv:PATH}"
     }
