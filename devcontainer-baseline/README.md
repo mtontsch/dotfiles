@@ -4,9 +4,13 @@ Reusable `.devcontainer/` template for Linux servers with NVIDIA GPUs, geared
 toward Python/geospatial/DL projects and safe operation of unsupervised LLM
 agents (Claude Code, Codex) inside the container. The files are the working
 **tileforge** setup: project- and user-level values are literal, host-level
-values are `${localEnv:TF_*:default}` with the **dgx1** values as defaults and
-iota supplied via the chezmoi-managed `~/.zshenv` — so one committed
-`devcontainer.json` serves every host (see "Per-host values").
+values are `${localEnv:TF_*:default}` with the **dgx1** values as defaults;
+every known host exports its `TF_*` set explicitly via the chezmoi-managed
+`~/.profile` — so one committed `devcontainer.json` serves every host (see
+"Per-host values"). Per-project variants live in each project's
+`.devcontainer/` (versioned with the project); per-host values live here in
+`dot_profile.tmpl`. One branch — never encode hosts or projects as git
+branches of this repo.
 
 ## Design decisions baked in
 
@@ -14,10 +18,11 @@ iota supplied via the chezmoi-managed `~/.zshenv` — so one committed
   setgid bit stripped from the image (root via `docker exec -u root` from the
   host), `no-new-privileges`, `--pids-limit`, `init: true`. Known gaps: open
   network egress; read-write bind mounts; no `--memory`/`--cpus` caps by default.
-- **Same-path mounts**: repo, data store, and workspace-file directory keep
-  their host paths inside the container. One path dialect everywhere — venv
-  shebangs, git worktrees, `.code-workspace` files, and Claude Code project
-  history stay valid on both sides of the boundary.
+- **Same-path mounts**: repo and data store keep their host paths inside the
+  container. One path dialect everywhere — venv shebangs, git worktrees, and
+  Claude Code project history stay valid on both sides of the boundary.
+  `.code-workspace` files live gitignored in the repo root, so they ride the
+  workspace mount and need no mount of their own.
 - **`--shm-size` instead of `--ipc=host`** (what PyTorch actually needs).
 - **uv-managed venv** in the repo + a named volume for the uv wheel cache so
   rebuilds don't re-download torch/CUDA.
@@ -38,7 +43,7 @@ iota supplied via the chezmoi-managed `~/.zshenv` — so one committed
 
 ## Adapting to a new project / server
 
-Copy the four files into `<project>/.devcontainer/`, then work through the
+Copy the three files into `<project>/.devcontainer/`, then work through the
 tags — `grep -rn 'SPECIFIC' .devcontainer/`:
 
 **[PROJECT-SPECIFIC]** (per repository)
@@ -54,7 +59,8 @@ instead (next section). The defaults are the dgx1 values.
 **[USER-SPECIFIC]**
 - `USERNAME` in `build.args`, `containerUser`/`remoteUser`, the `/home/<user>`
   paths in mounts and `remoteEnv` — the account name (not its numeric ids)
-- git identity in `remoteEnv`
+- git identity needs no entry: the chezmoi-applied `~/.gitconfig` carries it
+  (forge-based includeIf)
 
 ## Per-host values
 
@@ -68,7 +74,6 @@ value when unset:
 | `TF_DATA_GID`, `TF_DATA_GID2` | groups owning the data mount (`stat -c %g`); set both to the same id if there is only one | `1002`, `1003` | `100`, `100` |
 | `TF_DATA_ROOT`      | data store, same-path bind mount (narrowest subtree) | `/mnt/data/hegemon` | `/mnt/data`        |
 | `TF_SHM_SIZE`       | `--shm-size`                                      | `64g`               | `64g`                 |
-| `TF_WORKSPACES_DIR` | optional same-path mount for `.code-workspace` files; unset → no-op `/dev/null` self-mount | unset | `$HOME/WORKSPACES_IOTA` |
 
 They live in `dot_profile.tmpl` in this repo, branched on the trimmed output of
 `hostname`. Do not use `.chezmoi.hostname` for this: chezmoi can canonicalize it
@@ -76,10 +81,13 @@ through reverse DNS (on dgx1 it resolves to `localhost6`).
 `~/.profile` is what VS Code's login-shell environment resolution reads on a
 bash-login host (dgx1); `~/.zshenv` sources it so zsh hosts/sessions get the
 same values. (A `~/.zshenv`-only version silently failed on dgx1 — the login
-shell there is bash.) To add a host: add a branch with its
-values, `chezmoi apply`, then rebuild. Verify resolution end-to-end with the
-canary described under failure modes before trusting it — on a host whose
-values equal the defaults, a broken resolution path is invisible.
+shell there is bash.) Every known host exports its full `TF_*` set explicitly,
+even where values match a project's fallbacks — projects are then free to pick
+their own fallbacks (tileforge's are dgx1's, DeepSeepNet's are iota's), and a
+broken resolution path is visible on every host. To add a host (e.g. pontus):
+fill in its branch in `dot_profile.tmpl`, `chezmoi apply`, then rebuild.
+Verify resolution end-to-end with the canary described under failure modes
+before trusting it.
 
 ## First launch on a fresh server
 
@@ -114,9 +122,12 @@ Then in VS Code (Remote-SSH window): open the project folder → F1 →
   had cached as the interpreter. `python.defaultInterpreterPath` is pinned to
   `.venv` and the extension's terminal activation is off (`~/.zshrc.local`
   activates). Delete stale sibling venvs anyway.
-- `TF_*` resolution silently failing on the host where the values equal the
-  defaults: everything works there and the *other* host breaks with the
+- `TF_*` resolution silently failing on a host whose values equal a project's
+  fallbacks: everything works there and the *other* host breaks with the
   wrong-UID failure above. Canary after touching the mechanism: export one
-  observable non-default (e.g. `TF_WORKSPACES_DIR=$HOME/WORKSPACES_CANARY`,
-  directory created), rebuild, and check `mount | grep CANARY` inside; then
-  remove it and rebuild again to exercise the `/dev/null` fallback.
+  observable non-default (e.g. `TF_SHM_SIZE=65g`), rebuild, and check
+  `docker inspect -f '{{.HostConfig.ShmSize}}' <name>` on the host
+  (65g = 69793218560); then remove it and rebuild again.
+- A `~/.tmux.conf` file (e.g. symlinked by an older postCreate) silently
+  shadows the chezmoi-managed `~/.config/tmux/tmux.conf` — tmux prefers the
+  home-dir path. Delete it; nothing should create it.

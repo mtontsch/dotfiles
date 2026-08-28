@@ -11,9 +11,9 @@ WORKSPACE="$(pwd)"
 # setup belongs in the Dockerfile; one-off root work goes through
 # `docker exec -u root <container>` from the host.
 
-# Link the tracked tmux config into HOME so it survives container rebuilds.
-# Done first so a failure in a later step (e.g. uv sync) can't skip it.
-ln -sf "${WORKSPACE}/.devcontainer/tmux.conf" "${HOME}/.tmux.conf"
+# tmux config comes from chezmoi (~/.config/tmux/tmux.conf, applied at the
+# end of this script). Do NOT symlink anything to ~/.tmux.conf — tmux prefers
+# that path, so a stray file there silently shadows the managed config.
 
 # Ensure uv is available (it is already installed in the Dockerfile for normal
 # builds; this is a fallback for exotic base-image swaps).
@@ -64,14 +64,9 @@ fi
 # the host's skills (notably codex-worker, the authoritative Codex delegation
 # entry point per CLAUDE.md) are visible inside the container automatically.
 
-# Configure git identity once on container creation/rebuild.
-# Values come from devcontainer.json remoteEnv ([USER-SPECIFIC] there).
-if [ -n "${GIT_USER_NAME:-}" ] && [ -n "${GIT_USER_EMAIL:-}" ]; then
-	git config --global user.name "${GIT_USER_NAME}"
-	git config --global user.email "${GIT_USER_EMAIL}"
-else
-	echo "GIT_USER_NAME / GIT_USER_EMAIL not set; skipping git identity config"
-fi
+# Git identity needs no step here: chezmoi (below) applies ~/.gitconfig with
+# forge-based includeIf identities. Running `git config --global` would only
+# duplicate that and dirty the chezmoi-managed file.
 
 # Auto-activate the project venv and enable uv completions in every zsh shell
 # (and thus tmux panes). Container-specific lines go to ~/.zshrc.local, which

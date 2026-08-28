@@ -150,14 +150,9 @@
         // [USER-SPECIFIC] targets must match the container user's home.
         { "source": "${localEnv:HOME}/.claude", "target": "/home/mtontsch/.claude", "type": "bind" },
         { "source": "${localEnv:HOME}/.codex", "target": "/home/mtontsch/.codex", "type": "bind" },
-        // [SERVER-SPECIFIC] optional same-path mount for a workspace-file
-        // collection (iota: ~/WORKSPACES_IOTA, so its container-side
-        // .code-workspace files open from inside the container). Hosts without
-        // one leave TF_WORKSPACES_DIR unset: the fallback bind-mounts the
-        // host's /dev/null onto the container's /dev/null — the same character
-        // device, i.e. a no-op — because a mount entry cannot be made
-        // conditional and the source must exist on every host.
-        { "source": "${localEnv:TF_WORKSPACES_DIR:/dev/null}", "target": "${localEnv:TF_WORKSPACES_DIR:/dev/null}", "type": "bind" },
+        // .code-workspace files need no mount of their own: they live
+        // gitignored in the repo root (same-path workspace mount), so they
+        // open identically on host and container.
         // [PROJECT-SPECIFIC] volume name. Named volume for uv download cache so
         // rebuilds do not re-download multi-GB torch/CUDA wheels.
         // [USER-SPECIFIC] target must match the container user's home.
@@ -165,11 +160,9 @@
     ],
 
     "remoteEnv": {
-        // [USER-SPECIFIC] git identity — keep name/email in sync with the
-        // chezmoi-managed ~/.gitconfig so container commits blame/attribute
-        // identically.
-        "GIT_USER_NAME": "mtontsch",
-        "GIT_USER_EMAIL": "maximilian.tontsch@unibw.de",
+        // Git identity comes from the chezmoi-managed ~/.gitconfig applied in
+        // postCreate (forge-based includeIf) — no GIT_USER_* env here, which
+        // would only duplicate it and dirty the chezmoi-managed file.
         // CLAUDE_CODE_OAUTH_TOKEN is deliberately NOT forwarded: an env token
         // silently overrides the stored login in the bind-mounted ~/.claude
         // and goes stale — the "Fable (disabled)" incident of Aug 2026. The

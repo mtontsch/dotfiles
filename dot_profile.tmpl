@@ -20,10 +20,12 @@ if [ -d "$HOME/.local/bin" ] ; then
 fi
 
 # --- Per-host values for the devcontainer baseline ---------------------------
-# dotfiles:devcontainer-baseline/devcontainer.json reads these as
-# ${localEnv:TF_*:default}; defaults are the dgx1 values, so dgx1 exports
-# nothing. Inside containers no branch matches — harmless. See the baseline
-# README, "Per-host values".
+# Project devcontainer.json files read these as ${localEnv:TF_*:default}.
+# EVERY known host exports its values explicitly — even when they happen to
+# match a file's fallbacks — so projects are free to choose their own
+# fallbacks, and a broken resolution path is visible on every host (see the
+# baseline README, "Per-host values" and the canary under failure modes).
+# Inside containers no branch matches — harmless.
 {{- /* .chezmoi.hostname can be reverse-DNS-canonicalized (dgx1 becomes
       localhost6); the hostname command returns the machine's configured name. */}}
 {{- $hostname := output "hostname" | trim }}
@@ -33,7 +35,19 @@ export TF_GID=1001
 export TF_DATA_GID=100
 export TF_DATA_GID2=100
 export TF_DATA_ROOT=/mnt/data
-export TF_WORKSPACES_DIR="$HOME/WORKSPACES_IOTA"
 {{- else if hasPrefix "dgx1" $hostname }}
-# dgx1: the baseline defaults already match this host — nothing to override.
+export TF_UID=1005
+export TF_GID=1005
+export TF_DATA_GID=1002
+export TF_DATA_GID2=1003
+export TF_DATA_ROOT=/mnt/data/hegemon
+{{- else if eq $hostname "pontus" }}
+# TODO(pontus): fill in before first devcontainer build on this host —
+# `id -u` / `id -g`, `stat -c '%g' <data mount>` (twice if only one group),
+# and the data root; add TF_SHM_SIZE if 64g doesn't fit the machine.
+# export TF_UID=
+# export TF_GID=
+# export TF_DATA_GID=
+# export TF_DATA_GID2=
+# export TF_DATA_ROOT=
 {{- end }}
