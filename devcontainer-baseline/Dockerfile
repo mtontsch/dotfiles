@@ -102,9 +102,17 @@ RUN mkdir -p /home/${USERNAME}/.cache/uv \
 # convention). Docker applies that inherited ENV to every process regardless of
 # which user runs, so without this override $HOME stays /home/jovyan even though
 # we run as ${USERNAME}. That mismatch breaks the ~/.claude and ~/.codex bind
-# mounts (they target /home/${USERNAME}) and sends .zshrc/.tmux.conf to the
+# mounts (they target /home/${USERNAME}) and sends .zshrc and ~/.config to the
 # wrong home. Pin HOME to the runtime user's actual home directory.
 # Side effect: `docker exec -u root` shells also get this HOME, so root-run
 # tools may drop root-owned files into ${USERNAME}'s home — if a mysterious
 # root-owned ~/.cache appears, this is why.
 ENV HOME=/home/${USERNAME}
+
+# Same story for the working directory: the base image sets WORKDIR
+# /home/jovyan, and `docker exec` (devcon, plain host-side shells) starts
+# there — a read-only directory for ${USERNAME}. Anchor it to the user's home.
+# Devcontainer lifecycle commands and VS Code terminals are unaffected (they
+# use workspaceFolder). Placed after useradd so the directory already exists
+# with the right owner; an earlier WORKDIR would create it root-owned.
+WORKDIR /home/${USERNAME}

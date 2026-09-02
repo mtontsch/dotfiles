@@ -131,3 +131,13 @@ Then in VS Code (Remote-SSH window): open the project folder → F1 →
 - A `~/.tmux.conf` file (e.g. symlinked by an older postCreate) silently
   shadows the chezmoi-managed `~/.config/tmux/tmux.conf` — tmux prefers the
   home-dir path. Delete it; nothing should create it.
+- `devcon` / plain `docker exec` shells started in `/home/jovyan` (read-only,
+  lock icon in the prompt): the base image's WORKDIR leaks through — `docker
+  exec` uses it, VS Code terminals don't. The Dockerfile now sets `WORKDIR
+  /home/${USERNAME}` and `devcon` anchors the tmux session to `$HOME` via
+  `attach-session -c` / `new-session -c` (`new-session -A` ignores `-c` for
+  an existing session), so an old session is repaired on the next attach.
+- `11;rgb:0c0c/0c0c/0c0c` typed into the pane when attaching through Windows
+  Terminal + Windows `ssh.exe`: tmux's OSC 10/11 colour query reply arriving
+  too late for a 10 ms `escape-time`. The chezmoi tmux.conf uses 50 ms; a
+  newer tmux does not help (reported on 3.5a too).

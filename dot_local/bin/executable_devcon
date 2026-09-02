@@ -3,7 +3,22 @@
 # inside the running devcontainer. Attaches if the session exists, creates it
 # otherwise; tmux (and anything running in it, e.g. claude) survives detach
 # (prefix+d) and SSH disconnects.
+#
+# Working directory: `docker exec` starts in the image's WORKDIR, which for
+# the jupyter-based images is /home/jovyan unless the Dockerfile overrides
+# it. Anchor the session to the container user's $HOME explicitly, expanded
+# INSIDE the container (hence the escaping). Attach and create are separate
+# calls on purpose: `new-session -A` silently ignores `-c` when the session
+# already exists (verified on tmux 3.4), whereas `attach-session -c` does
+# re-anchor it — so a session created by an older devcon is repaired by the
+# next attach.
 set -euo pipefail
 CONTAINER="${1:-mt-tileforge-dev}"
 SESSION="${2:-dev}"
-exec docker exec -it "$CONTAINER" zsh -ic "tmux new-session -A -s '$SESSION'"
+exec docker exec -it "$CONTAINER" zsh -ic "
+    cd \"\$HOME\"
+    if tmux has-session -t '=$SESSION' 2>/dev/null; then
+        exec tmux attach-session -t '=$SESSION' -c \"\$HOME\"
+    else
+        exec tmux new-session -s '$SESSION' -c \"\$HOME\"
+    fi"
